@@ -13,3 +13,4 @@ pom.xml.asc
 
 # Default ignored files
 /{{name}}.iws
+*.iml

@@ -1,6 +1,6 @@
 (ns {{name}}.core
   (:require [uswitch.lambada.core :refer [deflambdafn]]
-            [clojure.data.json :as json]
+            [cheshire.core :as json]
             [clojure.java.io :as io]
             [cognitect.aws.client.api :as aws]
             [synergy-specs.events :as synspec]
@@ -32,7 +32,7 @@
 (defn process-event [event-content event-type]
   (if (empty? @snsArnPrefix)
     (stdlib/set-up-topic-table snsArnPrefix eventStoreTopic ssm))
-  (let [jevent (json/read-str event-content :key-fn keyword)
+  (let [jevent (json/parse-string event-content true)
         tevent (generate-new-event jevent)
         wevent (synspec/wrap-std-event tevent)]
     (info "JSON transformed event : " jevent)
@@ -52,7 +52,7 @@
 (deflambdafn {{name}}.core.Route
              [in out ctx]
              "Takes a JSON event in standard Synergy Event form from the Message field, convert to map and send to routing function"
-             (let [event (json/read (io/reader in) :key-fn keyword)
+             (let [event (json/parse-stream (io/reader in) true)
                    res (handle-event event)]
                (with-open [w (io/writer out)]
-                 (json/write res w))))
+                 (json/generate-stream res w {:pretty true}))))
